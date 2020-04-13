@@ -8,7 +8,7 @@ namespace Sailing.Framework.DependencyInjection
 {
     public class ServiceContainer : IServiceContainer
     {
-        private IDictionary<Type, IDictionary<string, Type>> container = new Dictionary<Type, IDictionary<string, Type>>();
+        private IDictionary<Type, IList<ServiceModel>> container = new Dictionary<Type, IList<ServiceModel>>();
 
         /// <summary>
         /// 注册
@@ -16,27 +16,38 @@ namespace Sailing.Framework.DependencyInjection
         /// <typeparam name="TInterface"></typeparam>
         /// <typeparam name="TClass"></typeparam>
         /// <param name="name">支持一接口多实现的名称</param>
-        public void Register<TInterface, TClass>(string name = "") where TClass : TInterface
+        public void Register<TInterface, TClass>(string name = "", LifeCycle lifeCycleType = LifeCycle.Transient) where TClass : TInterface
         {
             Type interfaceType = typeof(TInterface);
             Type classType = typeof(TClass);
 
             if (container.ContainsKey(interfaceType))
             {
-                if (container[interfaceType].ContainsKey(name))
+                if (container[interfaceType].Any(u => u.Name == name))
                 {
-                    container[interfaceType][name] = classType;
+                    container[interfaceType].Where(u => u.Name == name).First().InstanceType = classType;
+                    container[interfaceType].Where(u => u.Name == name).First().LifeCycleType = lifeCycleType;
                 }
                 else
                 {
-                    container[interfaceType].Add(name, classType);
+                    container[interfaceType].Add(new ServiceModel()
+                    {
+                        Name = name,
+                        InstanceType = classType,
+                        LifeCycleType = lifeCycleType
+                    });
                 }
             }
             else
             {
-                container.Add(interfaceType, new Dictionary<string, Type>()
+                container.Add(interfaceType, new List<ServiceModel>()
                 {
-                    { name,classType}
+                    new ServiceModel()
+                    {
+                        Name = name,
+                        InstanceType = classType,
+                        LifeCycleType = lifeCycleType
+                    }
                 });
             }
         }
@@ -61,7 +72,25 @@ namespace Sailing.Framework.DependencyInjection
         /// <returns>支持一接口多实现的名称</returns>
         private object ResolveObject(Type interfaceType, string name = "")
         {
-            Type classType = container[interfaceType][name];
+            ServiceModel serviceModel = container[interfaceType].Where(u => u.Name == name).FirstOrDefault();
+
+            //生命周期
+            switch (serviceModel.LifeCycleType)
+            {
+                case LifeCycle.Transient:
+                    break;
+                case LifeCycle.Singleton:
+                    //如果是单例，并且已经构造过，则直接返回
+                    if (serviceModel.Instance != null)
+                    {
+                        return serviceModel.Instance;
+                    }
+                    break;
+                case LifeCycle.Scoped:
+                    break;
+            }
+
+            Type classType = serviceModel.InstanceType;
 
             //支持构造函数注入
             //选择参数列表最长的构造函数
@@ -106,6 +135,19 @@ namespace Sailing.Framework.DependencyInjection
                 method.Invoke(instance, methodParamList.ToArray());
             }
 
+            //生命周期
+            switch (serviceModel.LifeCycleType)
+            {
+                case LifeCycle.Transient:
+                    break;
+                case LifeCycle.Singleton:
+                    //如果是单例，构造完后复制给ServiceModel
+                    serviceModel.Instance = instance;
+                    break;
+                case LifeCycle.Scoped:
+                    break;
+            }
+
             return instance;
         }
 
@@ -125,5 +167,17 @@ namespace Sailing.Framework.DependencyInjection
                 return "";
             }
         }
+
+        private class ServiceModel
+        {
+            public string Name { get; set; }
+
+            public Type InstanceType { get; set; }
+
+            public object Instance { get; set; }
+
+            public LifeCycle LifeCycleType { get; set; }
+        }
+
     }
 }

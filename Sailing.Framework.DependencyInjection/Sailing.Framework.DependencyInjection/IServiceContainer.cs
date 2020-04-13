@@ -12,7 +12,7 @@ namespace Sailing.Framework.DependencyInjection
         /// <typeparam name="TInterface"></typeparam>
         /// <typeparam name="TClass"></typeparam>
         /// <param name="name">支持一接口多实现的名称</param>
-        void Register<TInterface, TClass>(string name = "") where TClass : TInterface;
+        void Register<TInterface, TClass>(string name = "", LifeCycle lifeCycleType = LifeCycle.Transient) where TClass : TInterface;
 
         /// <summary>
         /// 获取
@@ -22,4 +22,12 @@ namespace Sailing.Framework.DependencyInjection
         /// <returns></returns>
         TInterface Resolve<TInterface>(string name = "");
     }
+
+    public enum LifeCycle
+    {
+        Transient,
+        Singleton,
+        Scoped
+    }
+
 }
