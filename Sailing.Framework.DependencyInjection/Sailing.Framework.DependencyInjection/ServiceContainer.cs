@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using System.Reflection;
+using Castle.DynamicProxy;
+using Sailing.Framework.Interceptor;
 
 namespace Sailing.Framework.DependencyInjection
 {
@@ -148,7 +150,15 @@ namespace Sailing.Framework.DependencyInjection
                     break;
             }
 
-            return instance;
+            //ProxyGenerator generator = new ProxyGenerator();
+            //ServiceContainerInterceptor interceptor = new ServiceContainerInterceptor();
+            //return generator.CreateInterfaceProxyWithTargetInterface(interfaceType, instance, interceptor);
+
+            var builder = new MethodInterceptorBuilder();
+
+            return builder.BuildInstanceWithMethodInterceptor(instance, interfaceType);
+
+            //return instance;
         }
 
         /// <summary>
@@ -166,17 +176,6 @@ namespace Sailing.Framework.DependencyInjection
             {
                 return "";
             }
-        }
-
-        private class ServiceModel
-        {
-            public string Name { get; set; }
-
-            public Type InstanceType { get; set; }
-
-            public object Instance { get; set; }
-
-            public LifeCycle LifeCycleType { get; set; }
         }
 
     }

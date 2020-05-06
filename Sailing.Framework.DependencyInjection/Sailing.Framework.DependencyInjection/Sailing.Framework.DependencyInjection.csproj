@@ -4,4 +4,14 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Castle.Core" Version="4.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Sailing.Framework.Interceptor">
+      <HintPath>..\..\..\Sailing.Framework.Interceptor\Sailing.Framework.Interceptor\bin\Debug\netstandard2.0\Sailing.Framework.Interceptor.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>
